@@ -1,13 +1,13 @@
 import Image from "next/image";
 import React from "react";
 import { Separator } from "../ui/separator";
+import Link from "next/link";
 
 function CompanyCard() {
   return (
-    <div className="main-card">
+    <Link href={"/profile/user33"} className="main-card !p-4">
       <div className="bg-main-bg rounded-md py-4 px-5 flex-center flex-col w-full">
         <div className="flex items-center gap-4 justify-start  w-full">
-        
           <Image
             src="/images/user-placeholder.png"
             alt="logo"
@@ -16,7 +16,9 @@ function CompanyCard() {
             height={30}
           />
           <div className=" flex flex-col gap-1">
-            <h4 className="capitalize text-base font-semibold ">Company Name</h4>
+            <h4 className="capitalize text-base font-semibold ">
+              Company Name
+            </h4>
             <p className="text-xs">Electronics</p>
           </div>
         </div>
@@ -36,7 +38,7 @@ function CompanyCard() {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

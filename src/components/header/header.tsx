@@ -5,7 +5,7 @@ import HeaderForm from "./form";
 
 export default function Header() {
   return (
-    <header className="h-20 flex-center p-2 bg-white fixed top-0 left-0 right-0 w-full">
+    <header className="h-20 flex-center p-2 bg-white fixed top-0 left-0 right-0 w-full z-50">
       <div className="container ">
         <div className="flex items-center justify-between gap-3">
           <div className="w-1/4 ">
