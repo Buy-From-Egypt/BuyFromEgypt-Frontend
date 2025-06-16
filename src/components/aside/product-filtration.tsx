@@ -96,7 +96,7 @@ function ProductsFiltration() {
                           defaultValue={field.value}
                           className="mt-4 px-2 flex flex-col space-y-2"
                         >
-                          {industryOptions?.map((option, index) => {
+                          {industryOptions?.map((option: { categoryId: string ; name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, index: number) => {
                             return (
                               <FormItem
                                 key={index + 1 - 1}
