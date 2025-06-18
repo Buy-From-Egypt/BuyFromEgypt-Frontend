@@ -2,7 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyInfo from "./company-info";
 import ProductsServices from "./products-services";
-// import Posts from "./posts";
+import Posts from "./posts";
 import Performance from "./performance";
 import OrderFulfillment from "./order-fulfillment";
 import CustomerSatisfaction from "./customer-satisfaction";
@@ -46,7 +46,7 @@ function ProfileTabs() {
           <ProductsServices />
         </TabsContent>
         <TabsContent value="posts">
-          {/* <Posts /> */}
+          <Posts />
         </TabsContent>
         <TabsContent value="performance">
           <Performance />

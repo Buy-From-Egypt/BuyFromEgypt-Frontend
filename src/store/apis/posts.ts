@@ -1,15 +1,34 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQuery } from "./base-query.api";
+
 export interface Post {
-  cloudFolder: string;
-  content: string;
-  createdAt: string;
   postId: string;
+  title: string;
+  content: string;
+  cloudFolder: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
   rating: number;
   reviewCount: number;
-  title: string;
-  updatedAt: string;
-  userId: string;
+  comments_count: number;
+  user: {
+    userId: string;
+    name: string;
+    profileImage: string;
+  };
+  images: Array<{
+    id: string;
+    url: string;
+    postId: string;
+  }>;
+}
+export interface RatePostRequest {
+  postId: string;
+  value: number;
+}
+export interface RatePostResponse {
+  message: string;
 }
 export const postsApi = createApi({
   reducerPath: "postsApi",
@@ -29,8 +48,21 @@ export const postsApi = createApi({
           method: "GET",
         }),
       }),
+      ratePost: builder.mutation<RatePostResponse, RatePostRequest>({
+        query: ({ value, postId }) => ({
+          url: `/rating/post/${postId}`,
+          method: "POST",
+          body: { value },
+        }),
+      }),
+      getPostId: builder.query<Post, { postId: string }>({
+        query: ({ postId }) => ({
+          url: `/posts/${postId}`,
+        }),
+      }),
     };
   },
 });
 
-export const { useCreatePostMutation , useGetPostsQuery } = postsApi;
+export const { useGetPostIdQuery, useCreatePostMutation, useGetPostsQuery, useRatePostMutation } =
+  postsApi;

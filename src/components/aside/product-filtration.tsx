@@ -17,6 +17,12 @@ import { Input } from "../ui/input";
 import { StarRating } from "../ui/star-rating";
 import { Button } from "../ui/button";
 import { useGetCategoriesQuery } from "@/store/apis/category";
+
+interface Category {
+  categoryId: string;
+  name: string;
+  // Add other fields as needed
+};
 import { useRouter } from "next/navigation";
 const ProductsFiltrationFormSchema = z.object({
   categoryId: z.string().optional(),
@@ -96,31 +102,33 @@ function ProductsFiltration() {
                           defaultValue={field.value}
                           className="mt-4 px-2 flex flex-col space-y-2"
                         >
-                          {industryOptions?.map((option: { categoryId: string ; name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, index: number) => {
+                            {industryOptions?.map((option: Category, index: number) => {
                             return (
                               <FormItem
-                                key={index + 1 - 1}
-                                className="flex items-center space-x-3 space-y-0"
+                              key={index + 1 - 1}
+                              className="flex items-center space-x-3 space-y-0"
                               >
-                                <FormControl>
-                                  <RadioGroupItem
-                                    className="[&_svg]:size-3 [&_svg]:rounded-full"
-                                    value={option.categoryId}
-                                    id={option.categoryId}
-                                  />
-                                </FormControl>
-                                <FormLabel
-                                  className="text-secondary font-normal flex justify-between w-full"
-                                  htmlFor={option.categoryId}
-                                >
-                                  {option.name}
-                                  {/* <div className="text-sm text-muted-foreground">
-                                    ({option.count}) 
-                                  {/* </div> */}
-                                </FormLabel>
+                              <FormControl>
+                                <RadioGroupItem
+                                className="[&_svg]:size-3 [&_svg]:rounded-full"
+                                value={option.categoryId}
+                                id={option.categoryId}
+                                />
+                              </FormControl>
+                              <FormLabel
+                                className="text-secondary font-normal flex justify-between w-full"
+                                htmlFor={option.categoryId}
+                              >
+                                {option.name}
+                                {/* <div className="text-sm text-muted-foreground">
+                                ({option.count}) 
+                                {/* </div> */}
+                              </FormLabel>
                               </FormItem>
                             );
-                          })}
+                            })}
+
+    
                         </RadioGroup>
                       </FormControl>
                     </FormItem>

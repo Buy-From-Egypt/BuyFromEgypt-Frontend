@@ -112,14 +112,7 @@ export const authApi = createApi({
           method: "POST",
         }),
       }),
-      //auth/verify-otp
-      verifyOtp: builder.mutation<VerifyOtpResponse, VerifyOtpRequest>({
-        query: (body) => ({
-          url: "/auth/verify-otp-link",
-          method: "POST",
-          body,
-        }),
-      }),
+     
       //auth/verify-otp-link
       verifyOtpLink: builder.mutation({
         query: (body) => ({
@@ -128,13 +121,21 @@ export const authApi = createApi({
           body,
         }),
       }),
-      //auth/request-reset
+      //1 auth/request-reset ==> identifier == email
       forgotPassword: builder.mutation<
         ForgotPasswordResponse,
         ForgotPasswordRequest
       >({
         query: (body) => ({
           url: "/auth/request-reset",
+          method: "POST",
+          body,
+        }),
+      }),
+       //2 auth/verify-otp
+      verifyOtp: builder.mutation<VerifyOtpResponse, VerifyOtpRequest>({
+        query: (body) => ({
+          url: "/auth/verify-otp-link",
           method: "POST",
           body,
         }),

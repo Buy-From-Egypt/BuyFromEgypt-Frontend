@@ -1,59 +1,85 @@
-"use client";
+"use client"
 
-import { cn } from "@/lib/utils";
-import { FileIcon, Trash2, Upload } from "lucide-react";
-import * as React from "react";
-import { Button } from "./button";
+import { cn } from "@/lib/utils"
+import { FileIcon, Trash2, Upload } from "lucide-react"
+import * as React from "react"
+import { Button } from "./button"
+import { toast } from "sonner"
 
 interface FileInputProps {
-  className?: string;
-  value?: File | null;
-  onChange?: (file: File | null) => void;
-  disabled?: boolean;
-  accept?: string;
+  className?: string
+  value?: File[]
+  onChange?: (files: File[]) => void
+  disabled?: boolean
+  accept?: string
+  maxFiles?: number
 }
 
 const FileInput = ({
   className,
-  value,
+  value = [],
   onChange,
   disabled,
   accept,
+  maxFiles = 5,
 }: FileInputProps) => {
-  const [isDragging, setIsDragging] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
-  const handleFileSelection = (file: File | null) => {
-    if (!disabled) onChange?.(file);
-  };
+  const handleFileSelection = (files: FileList | null) => {
+    if (!disabled && files) {
+      const fileArray = Array.from(files);
+      if (maxFiles && fileArray.length > maxFiles) {
+        toast.error(`Maximum ${maxFiles} files allowed`);
+        return;
+      }
+      onChange?.(fileArray);
+    }
+  }
 
   const handleDragEvents = (
     e: React.DragEvent<HTMLDivElement>,
-    isOver: boolean
+    isOver: boolean,
   ) => {
-    e.preventDefault();
-    if (!disabled) setIsDragging(isOver);
-  };
+    e.preventDefault()
+    if (!disabled) setIsDragging(isOver)
+  }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
+    e.preventDefault()
+    setIsDragging(false)
 
     if (!disabled) {
-      const file = e.dataTransfer.files?.[0] ?? null;
-      handleFileSelection(file);
+      const files = e.dataTransfer.files
+      handleFileSelection(files)
     }
-  };
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelection(e.target.files?.[0] ?? null);
-  };
+    handleFileSelection(e.target.files)
+  }
+
+  const createRemoveHandler = (index: number) => {
+    return (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault()
+      const newFiles = [...value]
+      newFiles.splice(index, 1)
+      onChange?.(newFiles)
+    }
+  }
 
   const handleRemove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    handleFileSelection(null);
-    if (inputRef.current) inputRef.current.value = "";
-  };
+    const parent = e.currentTarget.parentElement
+    if (!parent) return
+    const buttons = parent.querySelectorAll('button')
+    if (!buttons) return
+    const index = Array.from(buttons).indexOf(e.currentTarget)
+    if (index !== -1) {
+      const newFiles = [...value]
+      newFiles.splice(index, 1)
+      onChange?.(newFiles)
+    }
+  }
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -65,7 +91,7 @@ const FileInput = ({
         className={cn(
           "relative cursor-pointer rounded-md border border-dashed border-muted-foreground/25 px-6 py-8 text-center transition-colors hover:bg-muted/50",
           isDragging && "border-muted-foreground/50 bg-muted/50",
-          disabled && "cursor-not-allowed opacity-60"
+          disabled && "cursor-not-allowed opacity-60",
         )}
         role="button"
         tabIndex={0}
@@ -85,6 +111,30 @@ const FileInput = ({
             <span className="font-semibold text-primary">Click to upload</span>{" "}
             or drag and drop
           </p>
+          {value && value.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {value.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                  <div className="rounded-md bg-background p-2">
+                    <FileIcon className="size-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={createRemoveHandler(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       {value && (
@@ -92,12 +142,14 @@ const FileInput = ({
           <div className="rounded-md bg-background p-2">
             <FileIcon className="size-4 text-muted-foreground" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-medium">{value.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {(value.size / 1024 / 1024).toFixed(2)} MB
-            </p>
-          </div>
+          {value.map((file, index) => (
+            <div key={index} className="flex-1 min-w-0">
+              <p className="truncate text-sm font-medium">{file.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {(file.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+          ))}
           <Button
             type="button"
             variant="ghost"
@@ -112,7 +164,7 @@ const FileInput = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export { FileInput };
+export { FileInput }

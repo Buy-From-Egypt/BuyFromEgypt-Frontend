@@ -2,7 +2,10 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { JSX } from "react";
+import React, { JSX, useState } from "react";
+import { Button } from "../ui/button";
+import Image from "next/image";
+import AiChat from "../ai-chat/chat";
 interface VerticalNavProps {}
 interface Nav {
   name: string;
@@ -11,6 +14,7 @@ interface Nav {
   path: string;
 }
 function VerticalNav() {
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const pathname = usePathname();
   const nav: Nav[] = [
     {
@@ -187,30 +191,49 @@ function VerticalNav() {
     // },
   ];
   return (
-    <div className="main-card !p-4">
-      <div className=" rounded-md flex-center flex-col w-full">
-        {nav.map((item, index) => (
-          <Link
-            href={item.path}
-            className={cn(
-              "flex items-center bg-main-bg mb-3 gap-4 justify-start cursor-pointer  w-full py-4 px-2 rounded-md",
-              item.is_active && "text-white bg-primary hover:bg-primary/80"
-            )}
-            key={index + 1 - 1}
-          >
-            <div
-              className={cn(
-                "[&_svg]:stroke-[#3B3C36]",
-                item.is_active && "[&_svg]:stroke-[#EAECE1]"
-              )}
-            >
-              {item.svg}
-            </div>
-            <h4 className="capitalize text-base font-semibold ">{item.name}</h4>
-          </Link>
-        ))}
+    <>
+      <div className="flex flex-col gap-4 w-full">
+        <div className="main-card !p-4">
+          <div className=" rounded-md flex-center flex-col w-full">
+            {nav.map((item, index) => (
+              <Link
+                href={item.path}
+                className={cn(
+                  "flex items-center bg-main-bg mb-3 gap-4 justify-start cursor-pointer  w-full py-4 px-2 rounded-md",
+                  item.is_active && "text-white bg-primary hover:bg-primary/80"
+                )}
+                key={index + 1 - 1}
+              >
+                <div
+                  className={cn(
+                    "[&_svg]:stroke-[#3B3C36]",
+                    item.is_active && "[&_svg]:stroke-[#EAECE1]"
+                  )}
+                >
+                  {item.svg}
+                </div>
+                <h4 className="capitalize text-base font-semibold ">
+                  {item.name}
+                </h4>
+              </Link>
+            ))}
+          </div>
+        </div>
+        <Button
+          onClick={() => setIsAiModalOpen(true)}
+          className="bg-linear-to-r from-fuchsia-800 to-blue-400 flex items-center justify-between rounded-full !h-14"
+        >
+          <p>Ask Ai</p>
+          <Image
+            src={"/images/ask_ai.png"}
+            width={24}
+            height={24}
+            alt="ask_ai"
+          />
+        </Button>
+        <AiChat is_open={isAiModalOpen} setIsOpen={setIsAiModalOpen} />
       </div>
-    </div>
+    </>
   );
 }
 
