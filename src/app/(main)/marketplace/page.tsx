@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 
 const SearchFormSchema = z.object({
   search: z.string(),
@@ -103,6 +104,7 @@ function MarketplaceContent() {
         {data?.data?.map((product: Product) => (
           <ProductCard key={product.productId} product={product} />
         ))}
+       
       </div>
     </div>
   );
