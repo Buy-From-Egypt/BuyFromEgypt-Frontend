@@ -102,7 +102,7 @@ function ProductsFiltration() {
                           defaultValue={field.value}
                           className="mt-4 px-2 flex flex-col space-y-2"
                         >
-                            {industryOptions?.map((option: Category, index: number) => {
+                            {industryOptions?.data?.map((option: Category, index: number) => {
                             return (
                               <FormItem
                               key={index + 1 - 1}

@@ -29,6 +29,7 @@ function MarketplaceContent() {
       refetchOnMountOrArgChange: true,
     }
   );
+  console.log("data", data);
 
   const form = useForm<SearchForm>({
     resolver: zodResolver(SearchFormSchema),
@@ -36,7 +37,6 @@ function MarketplaceContent() {
       search: "",
     },
   });
-
   function onSubmit(data: SearchForm) {
     console.log(data);
   }

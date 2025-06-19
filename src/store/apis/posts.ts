@@ -42,13 +42,13 @@ export const postsApi = createApi({
           body,
         }),
       }),
-      getPosts: builder.query<Post[], void>({
+      getPosts: builder.query<{ data: Post[] }, void>({
         query: () => ({
           url: "/posts",
           method: "GET",
         }),
       }),
-      ratePost: builder.mutation<RatePostResponse, RatePostRequest>({
+      ratePost: builder.mutation<{data:RatePostResponse}, RatePostRequest>({
         query: ({ value, postId }) => ({
           url: `/rating/post/${postId}`,
           method: "POST",

@@ -83,7 +83,7 @@ export default function Marketplace() {
        
       </div>
       <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3  gap-4">
-        {data?.data?.map((product: Product) => (
+        {data?.data?.data?.map((product: Product) => (
           <ProductCard key={product.productId} product={product} />
         ))}
       </div>

@@ -41,7 +41,7 @@ function Timeline() {
   return (
     <div className="flex flex-col gap-4">
       <NewTimelineItem />
-      {data?.map((post) => (
+      {data?.data?.map((post) => (
         <TimelineItem key={post.postId} post={post} />
       ))}
     </div>
