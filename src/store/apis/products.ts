@@ -31,7 +31,7 @@ export interface Product {
   }>;
 }
 export interface ProductResponse {
-  data: Product[];
+  data:Product[]
   meta: {
     total: number;
     page: number;
