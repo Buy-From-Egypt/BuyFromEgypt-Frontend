@@ -137,6 +137,9 @@ export const authApi = createApi({
         query: (body) => ({
           url: "/auth/verify-otp-link",
           method: "POST",
+          headers: {
+            platform: "web",
+          },
           body,
         }),
       }),
@@ -160,16 +163,19 @@ export const authApi = createApi({
         }),
       }),
       // Chatbot chat endpoint
-      chatWithAI: builder.mutation<{
-        response: string;
-        session_id: string;
-      }, {
-        message: string;
-        session_id?: string;
-      }>({
+      chatWithAI: builder.mutation<
+        {
+          response: string;
+          session_id: string;
+        },
+        {
+          message: string;
+          session_id?: string;
+        }
+      >({
         query: (body) => ({
-          url: '/api/v1/chatbot/chat',
-          method: 'POST',
+          url: "/api/v1/chatbot/chat",
+          method: "POST",
           body,
         }),
       }),
@@ -184,6 +190,7 @@ export const authApi = createApi({
           shippingMethods: string;
           orderQuantity: string;
           receiveAlerts: boolean;
+          email: string;
         },
         {
           industries: string[];
@@ -191,6 +198,7 @@ export const authApi = createApi({
           shippingMethods: string;
           orderQuantity: string;
           receiveAlerts: boolean;
+          email: string;
         }
       >({
         query: (body) => ({

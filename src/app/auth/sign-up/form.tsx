@@ -85,6 +85,7 @@ export default function SignUpForm() {
 
   async function onSubmit(data: FormSchema) {
     try {
+      localStorage.setItem("identifier", data.email);
       setEmail(data.email);
 
       // Register the user

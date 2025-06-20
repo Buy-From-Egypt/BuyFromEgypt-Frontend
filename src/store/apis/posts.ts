@@ -44,6 +44,7 @@ export interface RatePostResponse {
 export const postsApi = createApi({
   reducerPath: "postsApi",
   baseQuery,
+  tagTypes: ["Posts"],
   endpoints: (builder) => {
     return {
       createPost: builder.mutation({

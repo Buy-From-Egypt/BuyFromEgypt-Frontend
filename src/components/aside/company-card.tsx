@@ -19,13 +19,13 @@ export interface UserSummary {
 }
 
 function CompanyCard() {
-  const [user, setUser] = useState<{ userId: string } | null>()
+  const [user, setUser] = useState<{ userId: string } | null>(null);
   useEffect(() => {
     const userData = localStorage?.getItem("user");
     if (userData) {
-      setUser(JSON.parse(userData));
-    }else{
-      setUser(null)
+      setUser(JSON.parse(userData) as { userId: string });
+    } else {
+      setUser(null);
     }
   }, []);
 

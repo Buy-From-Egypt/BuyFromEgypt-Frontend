@@ -40,7 +40,7 @@ function MarketplaceContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // State management
+  // State
   const [page, setPage] = useState(1);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [clientSideSearch, setClientSideSearch] = useState("");

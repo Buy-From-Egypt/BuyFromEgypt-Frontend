@@ -36,10 +36,10 @@ export default function SignInForm() {
   const form = useForm<FormSchema>({
     mode: "onSubmit",
     resolver: zodResolver(formSchema),
-    // defaultValues: {
-    //   email: "raza4omeh5@maildax.me",
-    //   password: "Pa$$w00rd@me1",
-    // },
+    defaultValues: {
+      email: "raza4omeh5@maildax.me",
+      password: "Pa$$w00rd@me1",
+    },
   });
 
   async function onSubmit(data: FormSchema) {
