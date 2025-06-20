@@ -2,7 +2,10 @@ import CompanyCard from "@/components/aside/company-card";
 import Messages from "@/components/aside/messages";
 import VerticalNav from "@/components/aside/vertical-nav";
 import Header from "@/components/header/header";
-
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Home",
+};
 export default function Layout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

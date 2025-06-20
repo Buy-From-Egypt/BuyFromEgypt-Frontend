@@ -14,7 +14,10 @@ import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRegisterMutation } from "@/store/apis/auth.api";
+import {
+  useForgotPasswordMutation,
+  useRegisterMutation,
+} from "@/store/apis/auth.api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import Link from "next/link";
@@ -55,6 +58,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 export default function SignUpForm() {
   const [register, { isLoading }] = useRegisterMutation();
+  const [requestOtp, { isLoading: isLoadingOtp }] = useForgotPasswordMutation();
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
   const [step, setStep] = React.useState<number>(1);
   const [open, setOpen] = React.useState<boolean>(false);
@@ -80,21 +84,28 @@ export default function SignUpForm() {
   });
 
   async function onSubmit(data: FormSchema) {
-    console.log("=====================================");
-    console.log(data);
-    console.log("=====================================");
-    setEmail(data.email);
-    await register(data)
-      .unwrap()
-      .then((res) => {
-        toast.success(res.message);
-        router.push("/auth/sign-in");
-      })
-      .catch(({ data }) => {
-        console.log("erorr", data);
-        toast.error(data.message);
-      });
-    // setOpen(true);
+    try {
+      setEmail(data.email);
+
+      // Register the user
+      const registerResponse = await register(data).unwrap();
+      toast.success(registerResponse.message);
+
+      // Request OTP for email verification
+      if (registerResponse?.user) {
+        const otpResponse = await requestOtp({
+          identifier: data.email,
+        }).unwrap();
+        toast.success(otpResponse.message);
+      }
+
+      setOpen(true);
+    } catch (error: any) {
+      const errorMessage =
+        error.data?.message || "An error occurred during registration";
+      toast.error(errorMessage);
+      console.error("Registration error:", error);
+    }
     // redirect("sign-in");
   }
   const handleContinue = async () => {
@@ -364,7 +375,6 @@ export default function SignUpForm() {
                             <FormLabel>Age</FormLabel>
                             <FormControl>
                               <Input
-
                                 placeholder="22"
                                 main_icon={
                                   <Image

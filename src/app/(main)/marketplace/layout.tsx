@@ -1,6 +1,7 @@
 import CompanyCard from "@/components/aside/company-card";
 import ProductsFiltration from "@/components/aside/product-filtration";
 import VerticalNav from "@/components/aside/vertical-nav";
+import Footer from "@/components/footer";
 import Header from "@/components/header/header";
 
 export default function Layout({
@@ -21,6 +22,7 @@ export default function Layout({
           </aside>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

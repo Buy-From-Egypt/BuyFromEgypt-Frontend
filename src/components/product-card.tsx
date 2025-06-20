@@ -3,30 +3,64 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Product } from "@/store/apis/products";
-
+import { Skeleton } from "./ui/skeleton";
+export function ProductCardSkeleton({ className }: { className?: string }) {
+  return (
+    <Card
+      className={cn(
+        "bg-white w-full border border-white rounded-lg pt-0 gap-4",
+        className
+      )}
+    >
+      <CardHeader className="bg-white rounded-lg px-0 flex items-center justify-center !h-44">
+        <Skeleton className="h-full w-full rounded-lg" />
+      </CardHeader>
+      <CardContent className="mt-4 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <div className="flex justify-between items-center mt-4">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 function ProductCard({
   className,
   product,
 }: Readonly<{ className?: string; product?: Product }>) {
   const product_image =
     product?.images.find((image) => image.isPrimary)?.url ||
-    "/images/user-placeholder.png";
+    "/images/no_product_image.png";
   return (
     <Card
       className={cn(
-        "w-full border border-white bg-transparent rounded-lg pt-0 gap-4",
+        "w-full border border-t-0 border-white bg-transparent rounded-lg pt-0 gap-4",
         className
       )}
     >
-      <CardHeader className="bg-white rounded-lg flex items-center justify-center !h-44">
-        <Image
-          src={product_image}
-          width={150}
-          height={150}
-          className="object-cover h-40 w-full"
-          alt="flag-icon"
-        />
-      </CardHeader>
+      {product_image === "/images/no_product_image.png" ? (
+        <CardHeader className="bg-white rounded-lg px-0  flex items-center justify-center !h-44">
+          <Image
+            src={product_image}
+            width={150}
+            height={150}
+            className="object-cover h-full w-full rounded-lg"
+            alt="flag-icon"
+          />
+        </CardHeader>
+      ) : (
+        <CardHeader className="bg-white rounded-lg px-0  flex items-center justify-center !h-44">
+          <Image
+            src={product_image}
+            width={150}
+            height={150}
+            className="object-cover h-full w-full rounded-lg"
+            alt="flag-icon"
+          />
+        </CardHeader>
+      )}
       <CardContent className="">
         <CardTitle className="mb-2 flex items-center justify-between gap-2">
           <p className="text-sm font-semibold text-secondary ">

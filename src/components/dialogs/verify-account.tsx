@@ -23,7 +23,10 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
+import { useVerifyOtpEmailMutation } from "@/store/apis/auth.api";
+import { toast } from "sonner";
+
 interface Props {
   email: string;
   is_open: boolean;
@@ -32,20 +35,35 @@ interface Props {
 const FormSchema = z.object({
   otp: z
     .string()
-    .min(4, { message: "OTP must be at least 4 characters." })
-    .max(4, { message: "OTP must be at most 4 characters." }),
+    .min(6, { message: "OTP must be at least 6 characters." })
+    .max(6, { message: "OTP must be at most 6 characters." }),
 });
 type FormData = z.infer<typeof FormSchema>;
 function VerifyAccount({ email, is_open, onOpenChange }: Readonly<Props>) {
+  const [verifyOtpEmail, { isLoading }] = useVerifyOtpEmailMutation();
+  const router = useRouter();
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       otp: "",
     },
   });
-  function onSubmit(data: FormData) {
+  async function onSubmit(data: FormData) {
     console.log(data);
-    redirect("sign-in");
+    // redirect("sign-in");
+    await verifyOtpEmail({
+      identifier: email,
+      otpCode: data.otp,
+    })
+      .unwrap()
+      .then((res) => {
+        toast.success(res.message);
+        onOpenChange(false);
+        router.push("/auth/preferences");
+      })
+      .catch(({ data }) => {
+        toast.error(data.message);
+      });
   }
   return (
     <Dialog open={is_open} onOpenChange={onOpenChange}>
@@ -81,7 +99,7 @@ function VerifyAccount({ email, is_open, onOpenChange }: Readonly<Props>) {
                   <FormItem>
                     <FormControl>
                       <InputOTP
-                        maxLength={4}
+                        maxLength={6}
                         pattern={REGEXP_ONLY_DIGITS}
                         {...field}
                       >
@@ -90,6 +108,8 @@ function VerifyAccount({ email, is_open, onOpenChange }: Readonly<Props>) {
                           <InputOTPSlot index={1} />
                           <InputOTPSlot index={2} />
                           <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
                         </InputOTPGroup>
                       </InputOTP>
                     </FormControl>
@@ -100,6 +120,8 @@ function VerifyAccount({ email, is_open, onOpenChange }: Readonly<Props>) {
             </div>
             <DialogFooter>
               <Button
+                disabled={!form.formState.isDirty || isLoading}
+                isLoading={isLoading}
                 type="submit"
                 variant={"default"}
                 className="h-12 mt-6 rounded-full w-full"

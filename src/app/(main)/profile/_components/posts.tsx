@@ -1,7 +1,8 @@
-import { TimelineItem } from '@/components/main/timeline'
+
 import React from 'react'
 
 import { Post } from '@/store/apis/posts'
+import { TimelineItem } from '@/components/posts/post';
 
 function Posts() {
   const mockPost: Post = {

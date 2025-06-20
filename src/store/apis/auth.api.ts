@@ -112,7 +112,7 @@ export const authApi = createApi({
           method: "POST",
         }),
       }),
-     
+
       //auth/verify-otp-link
       verifyOtpLink: builder.mutation({
         query: (body) => ({
@@ -132,7 +132,7 @@ export const authApi = createApi({
           body,
         }),
       }),
-       //2 auth/verify-otp
+      //2 auth/verify-otp
       verifyOtp: builder.mutation<VerifyOtpResponse, VerifyOtpRequest>({
         query: (body) => ({
           url: "/auth/verify-otp-link",
@@ -151,6 +151,54 @@ export const authApi = createApi({
           body,
         }),
       }),
+      // auth/verify-otp-email
+      verifyOtpEmail: builder.mutation<VerifyOtpResponse, VerifyOtpRequest>({
+        query: (body) => ({
+          url: "/auth/verify-otp",
+          method: "POST",
+          body,
+        }),
+      }),
+      // Chatbot chat endpoint
+      chatWithAI: builder.mutation<{
+        response: string;
+        session_id: string;
+      }, {
+        message: string;
+        session_id?: string;
+      }>({
+        query: (body) => ({
+          url: '/api/v1/chatbot/chat',
+          method: 'POST',
+          body,
+        }),
+      }),
+
+      // auth/user-preference
+      userPreference: builder.mutation<
+        {
+          id: string;
+          userId: string;
+          industries: string[];
+          supplierType: string;
+          shippingMethods: string;
+          orderQuantity: string;
+          receiveAlerts: boolean;
+        },
+        {
+          industries: string[];
+          supplierType: string;
+          shippingMethods: string;
+          orderQuantity: string;
+          receiveAlerts: boolean;
+        }
+      >({
+        query: (body) => ({
+          url: "api/v1/user-preference",
+          method: "POST",
+          body,
+        }),
+      }),
     };
   },
 });
@@ -163,4 +211,7 @@ export const {
   useVerifyOtpLinkMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useVerifyOtpEmailMutation,
+  useUserPreferenceMutation,
+  useChatWithAIMutation,
 } = authApi;

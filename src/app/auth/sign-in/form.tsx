@@ -36,10 +36,10 @@ export default function SignInForm() {
   const form = useForm<FormSchema>({
     mode: "onSubmit",
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      // email: "raza4omeh5@maildax.me",
-      // password: "Pa$$w00rd@me1",
-    },
+    // defaultValues: {
+    //   email: "raza4omeh5@maildax.me",
+    //   password: "Pa$$w00rd@me1",
+    // },
   });
 
   async function onSubmit(data: FormSchema) {
@@ -48,6 +48,7 @@ export default function SignInForm() {
       .unwrap()
       .then((res) => {
         localStorage.setItem("token", res.token);
+        localStorage.setItem("user", JSON.stringify(res.user));
         router.push("/home");
       })
       .catch(({ data }) => {

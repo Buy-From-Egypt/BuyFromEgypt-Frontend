@@ -1,12 +1,16 @@
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CompanyInfo from "./company-info";
+
 import ProductsServices from "./products-services";
 import Posts from "./posts";
 import Performance from "./performance";
 import OrderFulfillment from "./order-fulfillment";
 import CustomerSatisfaction from "./customer-satisfaction";
-function ProfileTabs() {
+import CompanyInfo from "@/components/profile/company-info";
+import { ProfileResponse } from "@/store/apis/profile";
+import { SocialMediaList } from "@/components/profile/social-media-list";
+
+function ProfileTabs({ data }: { data: ProfileResponse }) {
   return (
     <div>
       <Tabs defaultValue="company-info" className="w-full mt-6">
@@ -38,9 +42,24 @@ function ProfileTabs() {
           >
             Performance
           </TabsTrigger>
+          <Separator orientation="vertical" className="!h-7 !mx-4" />
+          <TabsTrigger
+            value="social-media"
+            className="rounded-md text-primary data-[state=active]:text-white data-[state=active]:bg-primary data-[state=active]:drop-shadow-[0px 0px 40px 10px rgba(142, 142, 142, 0.25)]"
+          >
+            Social Media
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="company-info">
-          <CompanyInfo slug={"sm"} />
+          <CompanyInfo
+            about={data.about || ""}
+            phoneNumber={data.phoneNumber || ""}
+            email={data.email || ""}
+            address={data.address || ""}
+            cityState={data.cityState || ""}
+            postCode={data.postCode || ""}
+            socialMedias={data.socialLinks || []}
+          />
         </TabsContent>
         <TabsContent value="products-services">
           <ProductsServices />
@@ -52,6 +71,9 @@ function ProfileTabs() {
           <Performance />
           <OrderFulfillment />
           <CustomerSatisfaction />
+        </TabsContent>
+        <TabsContent value="social-media" className="space-y-6">
+          <SocialMediaList />
         </TabsContent>
       </Tabs>
     </div>

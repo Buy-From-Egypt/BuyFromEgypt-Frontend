@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQuery } from "./base-query.api";
+import { Pagination } from "./posts";
 export interface Product {
   productId: string;
   name: string;
@@ -31,22 +32,18 @@ export interface Product {
   }>;
 }
 export interface ProductResponse {
-  data:Product[]
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    NextPage: boolean;
-    PreviousPage: boolean;
-  };
+  data: Product[];
+  meta: Pagination;
 }
 export const productsApi = createApi({
   reducerPath: "productsApi",
   baseQuery,
   endpoints: (builder) => {
     return {
-      getProducts: builder.query<ProductResponse, { [k: string]: string }>({
+      getProducts: builder.query<
+        ProductResponse,
+        { [k: string | number]: string | number }
+      >({
         query: (params) => ({
           url: "/products",
           method: "GET",

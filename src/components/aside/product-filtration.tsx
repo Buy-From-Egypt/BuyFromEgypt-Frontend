@@ -14,25 +14,20 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "../ui/switch";
 import { DoubleSlider } from "../ui/double-slider";
 import { Input } from "../ui/input";
-import { StarRating } from "../ui/star-rating";
 import { Button } from "../ui/button";
-import { useGetCategoriesQuery } from "@/store/apis/category";
-
-interface Category {
-  categoryId: string;
-  name: string;
-  // Add other fields as needed
-};
+import { Category, useGetCategoriesQuery } from "@/store/apis/category";
 import { useRouter } from "next/navigation";
+import { StarRating } from "../ui/star-rating";
+import { Loader2 } from "lucide-react";
 const ProductsFiltrationFormSchema = z.object({
   categoryId: z.string().optional(),
   // freeShipping: z.boolean().optional().optional(),
   available: z.boolean().optional(),
-  rate: z.string().optional(),
   price: z.object({
     from: z.number().optional(),
     to: z.number().optional(),
   }),
+  minRate: z.string().optional(),
 });
 type ProductsFiltrationFormType = z.infer<typeof ProductsFiltrationFormSchema>;
 function buildQueryParams(data: ProductsFiltrationFormType): string {
@@ -42,7 +37,7 @@ function buildQueryParams(data: ProductsFiltrationFormType): string {
   // if (data.freeShipping)
   //   params.set("freeShipping", data.freeShipping.toString());
   if (data.available) params.set("available", data.available.toString());
-  if (data.rate) params.set("rate", data.rate);
+  if (data.minRate) params.set("minRate", data.minRate);
 
   if (data.price?.from !== undefined)
     params.set("minPrice", String(data.price.from));
@@ -54,9 +49,10 @@ function buildQueryParams(data: ProductsFiltrationFormType): string {
 
 function ProductsFiltration() {
   const router = useRouter();
-  const { data: industryOptions } = useGetCategoriesQuery({
-    refetchOnMountOrArgChange: true,
-  });
+  const { data: industryOptions, isLoading: isLoadingCategories } =
+    useGetCategoriesQuery({
+      refetchOnMountOrArgChange: true,
+    });
 
   const [value, setValue] = useState([1000, 10000]);
 
@@ -64,9 +60,8 @@ function ProductsFiltration() {
     resolver: zodResolver(ProductsFiltrationFormSchema),
     defaultValues: {
       categoryId: "",
-      // freeShipping: false,
       available: false,
-      rate: "",
+      minRate: "",
       price: {
         from: 100,
         to: 10000,
@@ -97,39 +92,43 @@ function ProductsFiltration() {
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="mt-4 px-2 flex flex-col space-y-2"
-                        >
-                            {industryOptions?.data?.map((option: Category, index: number) => {
-                            return (
-                              <FormItem
-                              key={index + 1 - 1}
-                              className="flex items-center space-x-3 space-y-0"
-                              >
-                              <FormControl>
-                                <RadioGroupItem
-                                className="[&_svg]:size-3 [&_svg]:rounded-full"
-                                value={option.categoryId}
-                                id={option.categoryId}
-                                />
-                              </FormControl>
-                              <FormLabel
-                                className="text-secondary font-normal flex justify-between w-full"
-                                htmlFor={option.categoryId}
-                              >
-                                {option.name}
-                                {/* <div className="text-sm text-muted-foreground">
-                                ({option.count}) 
-                                {/* </div> */}
-                              </FormLabel>
-                              </FormItem>
-                            );
-                            })}
-
-    
-                        </RadioGroup>
+                        {isLoadingCategories ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="mt-4 px-2 flex flex-col space-y-2"
+                          >
+                            {industryOptions?.map(
+                              (option: Category, index: number) => (
+                                <FormItem
+                                  key={`${option.categoryId}-${index}`}
+                                  className="flex items-center space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <RadioGroupItem
+                                      className="[&_svg]:size-3 [&_svg]:rounded-full"
+                                      value={option.categoryId}
+                                      id={option.categoryId}
+                                    />
+                                  </FormControl>
+                                  <FormLabel
+                                    className="text-secondary font-normal flex justify-between w-full"
+                                    htmlFor={option.categoryId}
+                                  >
+                                    {option.name}
+                                    <div className="text-sm text-muted-foreground">
+                                      ({option.productCount})
+                                    </div>
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            )}
+                          </RadioGroup>
+                        )}
                       </FormControl>
                     </FormItem>
                   )}
@@ -137,25 +136,6 @@ function ProductsFiltration() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          {/* <FormField
-            control={form.control}
-            name="freeShipping"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between ">
-                <div className="space-y-0.5">
-                  <FormLabel className="font-semibold text-lg">
-                    Free shipping
-                  </FormLabel>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          /> */}
           <FormField
             control={form.control}
             name="available"
@@ -240,7 +220,7 @@ function ProductsFiltration() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          {/* <Accordion type="single" collapsible>
+          <Accordion type="single" collapsible className="!mb-0">
             <AccordionItem value="item-3">
               <AccordionTrigger className="flex justify-between gap-4 items-center !text-lg !font-semibold !leading-relaxed cursor-pointer !py-0">
                 Ratings
@@ -248,7 +228,7 @@ function ProductsFiltration() {
               <AccordionContent>
                 <FormField
                   control={form.control}
-                  name="rate"
+                  name="minRate"
                   render={({ field }) => (
                     <FormItem className="w-full">
                       <FormControl>
@@ -265,9 +245,9 @@ function ProductsFiltration() {
                 />
               </AccordionContent>
             </AccordionItem>
-          </Accordion> */}
+          </Accordion>
           <div className="flex  flex-row gap-4">
-            <Button type="submit" className="mt-4 h-9" >
+            <Button type="submit" className="mt-4 h-9">
               Filter
             </Button>
             <Button
