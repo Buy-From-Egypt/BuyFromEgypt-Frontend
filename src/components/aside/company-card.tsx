@@ -19,13 +19,15 @@ export interface UserSummary {
 }
 
 function CompanyCard() {
-  const [user, setUser] = useState<{ userId: string } | null>(null);
-  useEffect(() => {
-    const userData = localStorage?.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  const [user, setUser] = useState<{ userId: string } | null>(
+    JSON.parse(localStorage?.getItem("user") || "{}")
+  );
+  // useEffect(() => {
+  //   const userData = localStorage?.getItem("user");
+  //   if (userData) {
+  //     setUser(JSON.parse(userData));
+  //   }
+  // }, []);
 
   const {
     data: userData,
