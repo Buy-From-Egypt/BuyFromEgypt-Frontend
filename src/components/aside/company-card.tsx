@@ -20,7 +20,6 @@ export interface UserSummary {
 
 function CompanyCard() {
   const [user, setUser] = useState<{ userId: string } | null>()
-  );
   useEffect(() => {
     const userData = localStorage?.getItem("user");
     if (userData) {
