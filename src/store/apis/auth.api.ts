@@ -190,7 +190,6 @@ export const authApi = createApi({
           shippingMethods: string;
           orderQuantity: string;
           receiveAlerts: boolean;
-          email: string;
         },
         {
           industries: string[];
@@ -198,11 +197,11 @@ export const authApi = createApi({
           shippingMethods: string;
           orderQuantity: string;
           receiveAlerts: boolean;
-          email: string;
+          userId: string;
         }
       >({
         query: (body) => ({
-          url: "api/v1/user-preference",
+          url: "/api/v1/user-preference",
           method: "POST",
           body,
         }),

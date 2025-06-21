@@ -49,6 +49,7 @@ export default function SignInForm() {
       .then((res) => {
         localStorage.setItem("token", res.token);
         localStorage.setItem("user", JSON.stringify(res.user));
+        localStorage.setItem("userId", res.user.userId);
         router.push("/home");
       })
       .catch(({ data }) => {

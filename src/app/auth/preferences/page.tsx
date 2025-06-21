@@ -92,7 +92,7 @@ function Page() {
   });
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const identifier = localStorage.getItem("identifier") ? JSON.parse(localStorage.getItem("identifier") as string) : null;
+    const userId = localStorage.getItem("userId");
     try {
       const justValues = data.industries.map((industry) => industry.value);
       console.log("Form submitted:", data);
@@ -102,7 +102,7 @@ function Page() {
         shippingMethods: data.shippingMethod || "",
         orderQuantity: data.orderQuantity || "",
         receiveAlerts: data.receiveAlerts,
-        email:identifier
+        userId: userId || "",
       })
         .unwrap()
         .then((res) => {

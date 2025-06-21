@@ -85,11 +85,13 @@ export default function SignUpForm() {
 
   async function onSubmit(data: FormSchema) {
     try {
-      localStorage.setItem("identifier", data.email);
       setEmail(data.email);
 
       // Register the user
       const registerResponse = await register(data).unwrap();
+      if (registerResponse.user?.userId) {
+        localStorage.setItem("userId", registerResponse.user.userId);
+      }
       toast.success(registerResponse.message);
 
       // Request OTP for email verification
