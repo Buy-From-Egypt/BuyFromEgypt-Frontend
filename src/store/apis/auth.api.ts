@@ -174,7 +174,7 @@ export const authApi = createApi({
         }
       >({
         query: (body) => ({
-          url: "/api/v1/chatbot/chat",
+          url: "/chatbot/chat",
           method: "POST",
           body,
         }),
@@ -187,21 +187,21 @@ export const authApi = createApi({
           userId: string;
           industries: string[];
           supplierType: string;
-          shippingMethods: string;
+          shippingMethod: string;
           orderQuantity: string;
           receiveAlerts: boolean;
         },
         {
           industries: string[];
           supplierType: string;
-          shippingMethods: string;
+          shippingMethod: string;
           orderQuantity: string;
           receiveAlerts: boolean;
           userId: string;
         }
       >({
         query: (body) => ({
-          url: "/api/v1/user-preference",
+          url: "/user-preference",
           method: "POST",
           body,
         }),

@@ -99,7 +99,7 @@ function Page() {
       await userPreference({
         industries: justValues,
         supplierType: data.supplierType,
-        shippingMethods: data.shippingMethod || "",
+        shippingMethod: data.shippingMethod || "",
         orderQuantity: data.orderQuantity || "",
         receiveAlerts: data.receiveAlerts,
         userId: userId || "",
