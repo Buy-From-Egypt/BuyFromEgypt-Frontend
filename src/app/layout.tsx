@@ -35,7 +35,7 @@ export default function RootLayout({
           closeButton
           duration={3000}
         />
-        {/* <Chatbot /> */}
+        <Chatbot />
       </body>
     </html>
   );
