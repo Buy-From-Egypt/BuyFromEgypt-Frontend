@@ -4,6 +4,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Product } from "@/store/apis/products";
 import { Skeleton } from "./ui/skeleton";
+import Link from "next/link";
 export function ProductCardSkeleton({ className }: { className?: string }) {
   return (
     <Card
@@ -63,9 +64,9 @@ function ProductCard({
       )}
       <CardContent className="">
         <CardTitle className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-secondary ">
+          <Link href={`/product/${product?.productId}`} className="text-sm font-semibold text-secondary ">
             {product?.name}
-          </p>
+          </Link>
           <span className="flex items-center gap-2">
             <svg
               width="14"

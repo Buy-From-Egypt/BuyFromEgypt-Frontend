@@ -36,12 +36,12 @@ function ProfileTabs({ data }: { data: ProfileResponse }) {
             Posts
           </TabsTrigger>
           <Separator orientation="vertical" className="!h-7 !mx-4" />
-          <TabsTrigger
+          {/* <TabsTrigger
             value="performance"
             className="rounded-md text-primary data-[state=active]:text-white data-[state=active]:bg-primary data-[state=active]:drop-shadow-[0px 0px 40px 10px rgba(142, 142, 142, 0.25)]"
           >
             Performance
-          </TabsTrigger>
+          </TabsTrigger> */}
           <Separator orientation="vertical" className="!h-7 !mx-4" />
           <TabsTrigger
             value="social-media"
@@ -62,16 +62,16 @@ function ProfileTabs({ data }: { data: ProfileResponse }) {
           />
         </TabsContent>
         <TabsContent value="products-services">
-          <ProductsServices />
+          <ProductsServices data={data} />
         </TabsContent>
         <TabsContent value="posts">
-          <Posts />
+          <Posts data={data} />
         </TabsContent>
-        <TabsContent value="performance">
-          <Performance />
+        {/* <TabsContent value="performance">
+          {/* <Performance /> 
           <OrderFulfillment />
           <CustomerSatisfaction />
-        </TabsContent>
+        </TabsContent> */}
         <TabsContent value="social-media" className="space-y-6">
           <SocialMediaList />
         </TabsContent>

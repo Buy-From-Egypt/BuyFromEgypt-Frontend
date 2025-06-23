@@ -31,6 +31,17 @@ export interface Product {
     productId: string;
   }>;
 }
+export interface Category {
+  categoryId: string;
+  name: string;
+  description: string;
+}
+
+export interface CategoriesResponse {
+  data: Category[];
+  meta: Pagination;
+}
+
 export interface ProductResponse {
   data: Product[];
   meta: Pagination;
@@ -50,7 +61,42 @@ export const productsApi = createApi({
           params,
         }),
       }),
+      getProductById: builder.query<Product, string>({
+        query: (productId) => ({
+          url: `/products/${productId}`,
+          method: "GET",
+        }),
+      }),
+      getCategories: builder.query<CategoriesResponse, void>({
+        query: () => ({
+          url: "/categories",
+          method: "GET",
+        }),
+      }),
+      addProduct: builder.mutation({
+        query: (product) => ({
+          url: "/products",
+          method: "POST",
+          body: product,
+        }),
+      }),
+      getSavedProducts: builder.query<
+        ProductResponse,
+        { [k: string | number]: string | number }
+      >({
+        query: (params) => ({
+          url: "/products/saved",
+          method: "GET",
+          params,
+        }),
+      }),
     };
   },
 });
-export const { useGetProductsQuery } = productsApi;
+export const {
+  useGetProductsQuery,
+  useGetProductByIdQuery,
+  useAddProductMutation,
+  useGetCategoriesQuery,
+  useGetSavedProductsQuery,
+} = productsApi;

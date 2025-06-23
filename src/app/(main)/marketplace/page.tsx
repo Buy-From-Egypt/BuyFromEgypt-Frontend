@@ -24,15 +24,13 @@ import { Button } from "@/components/ui/button";
 
 // Types and API
 import { Product, useGetProductsQuery } from "@/store/apis/products";
+import AddProduct from "./add-product";
 
 // Schema for form validation
 const SearchFormSchema = z.object({
   search: z.string().max(100),
 });
-
 type SearchForm = z.infer<typeof SearchFormSchema>;
-
-// Constants
 const PRODUCTS_PER_PAGE = 12;
 
 function MarketplaceContent() {
@@ -44,7 +42,7 @@ function MarketplaceContent() {
   const [page, setPage] = useState(1);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [clientSideSearch, setClientSideSearch] = useState("");
-
+  const [addProductOpen, setAddProductOpen] = useState(false);
   // Filter products based on client-side search
   const filteredProducts = useMemo(() => {
     if (!clientSideSearch) return allProducts;
@@ -209,9 +207,13 @@ function MarketplaceContent() {
 
   return (
     <div className="w-full flex flex-col gap-6">
+      <AddProduct is_open={addProductOpen} onOpenChange={setAddProductOpen} />
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
+          <Button onClick={() => setAddProductOpen(true)}>Add Product</Button>
+        </div>
         <p className="text-muted-foreground">
           Discover top-quality Egyptian products and connect with trusted
           exporters

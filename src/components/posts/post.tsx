@@ -66,13 +66,15 @@ export function TimelineItem({ post }: { post: Post }) {
           />
           <div className="flex items-start justify-start flex-col gap-0.5">
             <h4 className="capitalize text-xl font-semibold ">
-              <Link href={`/profile/${post.userId}`}>{post.user.name}</Link>
+              {/* <Link href={`/profile/${post.userId}`}> */}
+              {post.user.name}
+              {/* </Link> */}
             </h4>
             <p className="text-base">{formatTimeAgo(post.createdAt)}</p>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2">
-          <Toggle variant={"save"}>
+          {/* <Toggle variant={"save"}>
             <svg
               width="24"
               height="24"
@@ -97,7 +99,7 @@ export function TimelineItem({ post }: { post: Post }) {
                 />
               </g>
             </svg>
-          </Toggle>
+          </Toggle> */}
           <Button
             onClick={() => setIsListOpen(true)}
             className="size-12 bg-transparent shadow-none flex-center hover:bg-transparent p-0"

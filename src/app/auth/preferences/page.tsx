@@ -108,8 +108,9 @@ function Page() {
         .then((res) => {
           router.push("/auth/sign-in");
         })
-        .catch(({ data }) => {
-          toast.error(data.message);
+        .catch((error: any) => {
+          const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+          toast.error(errorMessage);
         });
       toast.success("Preferences saved successfully!");
     } catch (error) {

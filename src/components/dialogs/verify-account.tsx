@@ -61,8 +61,9 @@ function VerifyAccount({ email, is_open, onOpenChange }: Readonly<Props>) {
         onOpenChange(false);
         router.push("/auth/preferences");
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
   return (

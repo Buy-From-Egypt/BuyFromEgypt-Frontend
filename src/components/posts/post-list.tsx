@@ -59,7 +59,7 @@ export const PostList = ({
             </svg>
             <p className="text-base font-semibold">Copy post link</p>
           </div>
-          <div
+          {/* <div
             // href="/edit-post"
             className="cursor-pointer flex items-center justify-start w-full rounded-full px-4 gap-4 h-10 hover:bg-main-bg"
           >
@@ -129,7 +129,7 @@ export const PostList = ({
               </g>
             </svg>
             <p className="text-base font-semibold">Delete Post</p>
-          </div>
+          </div> */}
         </div>
       </DialogContent>
     </Dialog>

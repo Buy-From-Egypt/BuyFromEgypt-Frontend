@@ -64,8 +64,9 @@ function CreatePost({ is_open, onOpenChange }: Readonly<Props>) {
         form.reset();
         onOpenChange(false);
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
   return (

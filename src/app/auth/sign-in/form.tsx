@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLoginMutation } from "@/store/apis/auth.api";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z
@@ -30,6 +31,7 @@ const formSchema = z.object({
 });
 type FormSchema = z.infer<typeof formSchema>;
 export default function SignInForm() {
+  const { login: loginAuth } = useAuth();
   const [login, { isLoading }] = useLoginMutation();
   const router = useRouter();
   const [showPassword, setShowPassword] = React.useState(false);
@@ -50,10 +52,12 @@ export default function SignInForm() {
         localStorage.setItem("token", res.token);
         localStorage.setItem("user", JSON.stringify(res.user));
         localStorage.setItem("userId", res.user.userId);
+        loginAuth(res.user, res.token);
         router.push("/home");
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
   return (

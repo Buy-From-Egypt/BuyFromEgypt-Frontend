@@ -18,8 +18,23 @@ interface Post {
   postId: string;
   title: string;
   content: string;
+  cloudFolder: string;
+  userId: string;
   createdAt: string;
-  images: Image[];
+  updatedAt: string;
+  rating: number;
+  reviewCount: number;
+  comments_count: number;
+  user: {
+    userId: string;
+    name: string;
+    profileImage: string;
+  };
+  images: Array<{
+    id: string;
+    url: string;
+    postId: string;
+  }>;
 }
 
 interface Category {
@@ -34,11 +49,32 @@ interface Category {
 interface Product {
   productId: string;
   name: string;
+  slug: string;
+  description: string;
   price: number;
   currencyCode: string;
-  images: Image[];
+  active: boolean;
   rating: number;
   reviewCount: number;
+  createdAt: string;
+  updatedAt: string;
+  owner: {
+    userId: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  category: {
+    categoryId: string;
+    name: string;
+    description: string;
+  };
+  images: Array<{
+    id: string;
+    url: string;
+    isPrimary: boolean;
+    productId: string;
+  }>;
 }
 
 interface Follow {

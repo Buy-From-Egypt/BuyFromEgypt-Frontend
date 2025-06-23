@@ -76,6 +76,27 @@ export const postsApi = createApi({
           url: `/posts/${postId}`,
         }),
       }),
+      getPostComments: builder.query<Post, { postId: string }>({
+        query: ({ postId }) => ({
+          url: `/comments/allComments/${postId}`,
+        }),
+      }),
+      createComment: builder.mutation<
+        Post,
+        { postId: string; content: string }
+      >({
+        query: ({ postId, content }) => ({
+          url: `/comments`,
+          method: "POST",
+          body: { postId, content },
+        }),
+      }),
+      savePost: builder.mutation<Post, { postId: string }>({
+        query: ({ postId }) => ({
+          url: `/posts/${postId}/save`,
+          method: "POST",
+        }),
+      }),
     };
   },
 });
@@ -85,4 +106,7 @@ export const {
   useCreatePostMutation,
   useGetPostsQuery,
   useRatePostMutation,
+  useSavePostMutation,
+  useGetPostCommentsQuery,
+  useCreateCommentMutation,
 } = postsApi;

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Manrope } from "next/font/google";
 import { StoreProvider } from "@/providers/store.provider";
 import { Toaster } from "@/components/ui/sonner";
+import { Chatbot } from "@/components/ui/Chatbot";
+import { AuthProvider } from "@/context/AuthContext";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -21,8 +23,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} antialiased`}>
-        <StoreProvider>{children}</StoreProvider>
-        <Toaster richColors theme="light" position="top-left" closeButton duration={3000} />
+          <AuthProvider>
+        <StoreProvider>
+            {children}
+        </StoreProvider>
+            </AuthProvider>
+        <Toaster
+          richColors
+          theme="light"
+          position="top-left"
+          closeButton
+          duration={3000}
+        />
+        {/* <Chatbot /> */}
       </body>
     </html>
   );

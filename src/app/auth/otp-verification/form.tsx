@@ -46,8 +46,9 @@ function OtpVerificationForm() {
         toast.success(res.message);
         // router.push("update-password");
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
     // console.log(data);
   }

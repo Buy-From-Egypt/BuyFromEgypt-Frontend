@@ -41,8 +41,9 @@ function ForgotPasswordForm() {
         localStorage.setItem("identifier", data.identifier);
         router.push("otp-verification");
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
     // redirect("otp-verification");
     console.log(data);

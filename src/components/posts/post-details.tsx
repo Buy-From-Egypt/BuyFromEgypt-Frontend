@@ -8,16 +8,34 @@ import CompanyDetails from "../company-details";
 import { Toggle } from "../ui/toggle";
 import Image from "next/image";
 import { Badge } from "../ui/badge";
-import { ArrowUpDown, ChevronDown, Star } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Loader, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Form, FormControl, FormField, FormItem } from "../ui/form";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { useGetPostIdQuery } from "@/store/apis/posts";
+import {
+  useCreateCommentMutation,
+  useGetPostCommentsQuery,
+  useGetPostIdQuery,
+  useSavePostMutation,
+} from "@/store/apis/posts";
+import { toast } from "sonner";
+import { Skeleton } from "../ui/skeleton";
 
 const PostDetailsFormSchema = z.object({
   comment: z.string(),
 });
+type Comment = {
+  id: string;
+  content: string;
+  user: {
+    id: string;
+    name?: string;
+    profileImage?: string;
+  };
+  createdAt: string;
+};
+
 type PostDetailsFormType = z.infer<typeof PostDetailsFormSchema>;
 const PostDetails = ({
   postId,
@@ -28,15 +46,48 @@ const PostDetails = ({
   is_open: boolean;
   onOpenChange: (open: boolean) => void;
 }>) => {
+  const [createComment, { isLoading: isCommentLoading }] =
+    useCreateCommentMutation();
   const { data: post, isLoading } = useGetPostIdQuery({ postId });
+  const [savePost, { isLoading: isSaveLoading }] = useSavePostMutation();
+  const {
+    data: commentsResponse,
+    isLoading: isCommentsLoading,
+    refetch: refetchComments,
+  } = useGetPostCommentsQuery({ postId });
+  const comments: Comment[] = Array.isArray(commentsResponse)
+    ? commentsResponse
+    : [];
   const form = useForm<PostDetailsFormType>({
     resolver: zodResolver(PostDetailsFormSchema),
     defaultValues: {
       comment: "",
     },
   });
-  function onSubmit(data: PostDetailsFormType) {
-    console.log(data);
+  const handleSavePost = async () => {
+    await savePost({ postId })
+      .then(() => {
+        toast.success("Post saved successfully");
+      })
+      .catch((error) => {
+        toast.error("Failed to save post");
+      });
+  };
+  async function onSubmit(data: PostDetailsFormType) {
+    if (!data.comment.trim()) return;
+
+    try {
+      await createComment({
+        postId,
+        content: data.comment,
+      }).unwrap();
+
+      // Clear the form and refresh comments
+      form.reset({ comment: "" });
+      refetchComments();
+    } catch (error) {
+      console.error("Failed to post comment:", error);
+    }
   }
   return (
     <Dialog open={is_open} onOpenChange={onOpenChange}>
@@ -55,14 +106,21 @@ const PostDetails = ({
                 time={post?.createdAt}
               />
               <div className="flex items-center justify-end gap-2">
-                <Toggle>
-                  <Image
-                    src="/images/saves.png"
-                    alt="saves"
-                    width={24}
-                    className="size-6"
-                    height={24}
-                  />
+                <Toggle onClick={handleSavePost}>
+                  {/* <div className="size-12 bg-main-bg rounded-full flex-center"> */}
+                  {isSaveLoading ? (
+                    <Loader className="size-6 rounded-full" />
+                  ) : (
+                    <Image
+                      src="/images/saves.png"
+                      alt="saves"
+                      width={24}
+                      className="size-6"
+                      height={24}
+                    />
+                  )}
+
+                  {/* </div> */}
                 </Toggle>
                 <div className="size-12 bg-main-bg rounded-full flex-center">
                   <Image
@@ -106,41 +164,42 @@ const PostDetails = ({
                 <ChevronDown size={16} />
               </div>
             </div>
-            <div className="flex items-start mt-4">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>User</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col gap-2 ml-2">
-                <div className="flex items-center gap-2">
-                  Mohamed Talaat
-                  <span className="text-xs text-neutral-400 font-bold">
-                    5 hours ago
-                  </span>
-                </div>
-                <div className="flex items-center justify-start gap-1">
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <Star className="w-4 h-4 fill-neutral-700" />
-                </div>
+            {isCommentsLoading ? (
+              <div className="mt-4">Loading comments...</div>
+            ) : (
+              <div className="space-y-4 mt-4 max-h-96 overflow-y-auto pr-2">
+                {(comments as Comment[]).length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No comments yet. Be the first to comment!
+                  </p>
+                ) : (
+                  (comments as Comment[]).map((comment) => (
+                    <div key={comment.id} className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={comment.user?.profileImage} />
+                        <AvatarFallback>
+                          {comment.user?.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {comment.user?.name || "Anonymous"}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(comment.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm mt-1">{comment.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-            </div>
-            <div className="mt-4 mb-36">
-              <p className="text-sm">
-                Lorem Ipsum is simply dummy text of the printing and typesetting
-                industry. Lorem Ipsum has been the industry's standard dummy
-                text ever since the 1500s, when an unknown printer took a galley
-                of type and scrambled it to make a type specimen book. It has
-                survived not only five centuries, but also the leap into
-                electronic typesetting, remaining essentially unchanged. It was
-                popularised in the 1960s with the release of Letraset sheets
-                containing Lorem Ipsum passages, and more recently with desktop
-                publishing software like Aldus PageMaker including versions of
-                Lorem Ipsum.
-              </p>
-            </div>
+            )}
+            <div className="mb-36" />
             <div className="mt-4 bg-zinc-100 rounded-xl py-2 px-2 absolute bottom-2 left-0 right-0  mx-4">
               <Form {...form}>
                 <form
@@ -163,46 +222,12 @@ const PostDetails = ({
                     )}
                   />
                   <div className="w-full flex items-center justify-between gap-4">
-                    <div className="flex items-center justify-start gap-4">
-                      <div className="flex items-center gap-4 justify-start">
-                        <Image
-                          src="/images/gallery.png"
-                          alt="logo"
-                          width={24}
-                          className="size-6"
-                          height={24}
-                        />
-                      </div>
-                      <div className="flex items-center gap-4 justify-start">
-                        <Image
-                          src="/images/video.png"
-                          alt="logo"
-                          width={24}
-                          className="size-6"
-                          height={24}
-                        />
-                      </div>
-                      <div className="flex items-center gap-4 justify-start">
-                        <Image
-                          src="/images/link.png"
-                          alt="logo"
-                          width={24}
-                          className="size-6  "
-                          height={24}
-                        />
-                      </div>
-                      <div className="flex items-center gap-4 justify-start">
-                        <Image
-                          src="/images/event.png"
-                          alt="logo"
-                          width={24}
-                          className="size-6  "
-                          height={24}
-                        />
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-32 rounded-full">
-                      Send
+                    <Button
+                      type="submit"
+                      className="w-32 rounded-full"
+                      disabled={isCommentLoading}
+                    >
+                      {isCommentLoading ? "Sending..." : "Send"}
                     </Button>
                   </div>
                 </form>

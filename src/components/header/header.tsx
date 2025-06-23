@@ -29,14 +29,14 @@ export default function Header() {
                 alt="flag-icon"
               />
             </div>
-            <div className="size-12 border-2 border-main-bg rounded-full flex-center gap-2">
+            {/* <div className="size-12 border-2 border-main-bg rounded-full flex-center gap-2">
               <Image
                 src="/images/bell.png"
                 width={24}
                 height={24}
                 alt="bell-icon"
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

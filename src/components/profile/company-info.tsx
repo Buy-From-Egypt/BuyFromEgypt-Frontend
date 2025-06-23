@@ -187,8 +187,9 @@ function UpdateAbout({
         toast.success("Profile updated successfully");
         setIsOpen(false);
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
   return (
@@ -261,8 +262,9 @@ function UpdateContact({
         toast.success("Profile updated successfully");
         setIsOpen(false);
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
 
@@ -344,8 +346,9 @@ function UpdateAddress({
         toast.success("Profile updated successfully");
         setIsOpen(false);
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
   return (
@@ -425,8 +428,9 @@ function SocialMediaForm({
         toast.success("Profile updated successfully");
         setIsOpen(false);
       })
-      .catch(({ data }) => {
-        toast.error(data.message);
+      .catch((error: any) => {
+        const errorMessage = error?.data?.message || 'An unexpected error occurred. Please try again.';
+        toast.error(errorMessage);
       });
   }
   return (
