@@ -1,8 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQuery } from "./base-query.api";
 
-// NOTE: This is an assumption of the data structure based on the UI.
-// We may need to adjust it based on the actual API response.
 interface ConversationUser {
   userId: string;
   name: string;
@@ -21,22 +19,51 @@ export interface Conversation {
   unreadCount: number;
 }
 
+export interface SendMessageRequest {
+  senderId: string;
+  content: string;
+  messageType: "TEXT" | "IMAGE" | "FILE";
+  receiverId?: string;
+  conversationId?: string;
+}
+
+export interface SendMessageResponse {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  messageType: string;
+  createdAt: string;
+  conversationId: string;
+}
+
 export const chatApi = createApi({
   reducerPath: "chatApi",
   baseQuery,
-  tagTypes: ["Conversations"],
+  tagTypes: ["Conversations", "Messages"],
   endpoints: (builder) => ({
     getConversations: builder.query<Conversation[], string>({
       query: (userId) => `chat/conversations?userId=${userId}`,
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Conversations" as const, id })),
+              ...result.map(({ id }) => ({
+                type: "Conversations" as const,
+                id,
+              })),
               { type: "Conversations", id: "LIST" },
             ]
           : [{ type: "Conversations", id: "LIST" }],
     }),
+    sendMessage: builder.mutation<SendMessageResponse, SendMessageRequest>({
+      query: (message) => ({
+        url: "chat/sendMessage",
+        method: "POST",
+        body: message,
+      }),
+      invalidatesTags: [{ type: "Conversations", id: "LIST" }, "Messages"],
+    }),
   }),
 });
 
-export const { useGetConversationsQuery } = chatApi;
+export const { useGetConversationsQuery, useSendMessageMutation } = chatApi;

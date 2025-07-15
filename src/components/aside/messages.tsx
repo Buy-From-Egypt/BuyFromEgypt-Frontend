@@ -12,7 +12,10 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useGetConversationsQuery } from "@/store/apis/chat.api";
+import {
+  useGetConversationsQuery,
+  useSendMessageMutation,
+} from "@/store/apis/chat.api";
 import { useSocket } from "@/hooks/use-socket";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
@@ -22,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
 import { ChatDialog } from "@/components/chat/ChatDialog";
-import { io, Socket } from "socket.io-client";
+
 import { Message } from "@/types/chat";
 
 // API Response Types
@@ -140,51 +143,74 @@ function Messages({
     refetchOnMountOrArgChange: true,
   });
 
-  // Handle conversation click
+  const { socket } = useSocket();
+
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetConversationsQuery(user?.userId || "", {
+    skip: !user?.userId,
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
+    refetchOnFocus: true,
+  });
+
+  const handleMarkConversationAsRead = useCallback(
+    (conversationId: string) => {
+      if (!socket || !user?.userId) return;
+
+      const conversation = currentConversation;
+      if (conversation && conversation.messages.length > 0) {
+        const lastMessage =
+          conversation.messages[conversation.messages.length - 1];
+
+        console.log("Marking conversation as read:", {
+          conversationId,
+          userId: user.userId,
+          lastReadMessageId: lastMessage.messageId,
+        });
+
+        socket.emit("conversationRead", {
+          conversationId,
+          userId: user.userId,
+          lastReadMessageId: lastMessage.messageId,
+        });
+
+        setCurrentConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((msg) => ({
+              ...msg,
+              seen: true,
+              delivered: true,
+            })),
+          };
+        });
+      }
+    },
+    [socket, user?.userId, currentConversation]
+  );
+
   const handleConversationClick = useCallback(
     (conversation: ApiConversation) => {
       setCurrentConversation(conversation);
       setSelectedConversationId(conversation.id);
       setIsChatOpen(true);
       onConversationSelect?.(conversation.id);
+
+      setTimeout(() => {
+        handleMarkConversationAsRead(conversation.id);
+      }, 1000);
+
       // router.push(`/messages/${conversation.id}`);
     },
-    [onConversationSelect, router]
+    [onConversationSelect, handleMarkConversationAsRead]
   );
 
-  // Using handleConversationClick for both direct clicks and programmatic selection
-  // since they perform the same actions
-
-  // Initialize conversation from URL on mount
-  const { socket } = useSocket();
-
-  // useEffect(() => {
-  //   if (initialSelectedConversationId && conversationsData) {
-  //     const conversation = Array.isArray(conversationsData)
-  //       ? conversationsData.find(
-  //           (c: { id: string }) => c.id === initialSelectedConversationId
-  //         )
-  //       : null;
-  //     if (conversation) {
-  //       // Ensure the conversation has all required ApiConversation properties
-  //       const apiConversation: Conversation = {
-  //         ...conversation,
-  //         name: conversation.name || null,
-  //         type: conversation.type === "direct" ? "PRIVATE" : "GROUP",
-  //         createdAt: conversation.createdAt || new Date().toISOString(),
-  //         updatedAt: conversation.updatedAt || new Date().toISOString(),
-  //         messages: [], // Add empty array if messages is undefined
-  //       };
-  //       handleConversationClick(apiConversation);
-  //     }
-  //   }
-  // }, [
-  //   initialSelectedConversationId,
-  //   conversationsData,
-  //   handleConversationClick,
-  // ]);
-
-  // Track typing status
   const [typingStatus, setTypingStatus] = useState<{ [key: string]: boolean }>(
     {}
   );
@@ -193,65 +219,6 @@ function Messages({
   // Set up WebSocket listeners for real-time updates
   useEffect(() => {
     if (!socket || !currentConversation) return;
-
-    const handleNewMessage = (message: ApiMessage) => {
-      // Handle incoming message
-      if (message.conversationId === currentConversation.id) {
-        // Update the current conversation with the new message
-        setCurrentConversation((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            messages: [...prev.messages, message],
-            updatedAt: new Date().toISOString(),
-            lastMessage: {
-              id: message.messageId,
-              content: message.content,
-              createdAt: message.createdAt,
-              senderName: message.sender?.name || "Unknown",
-            },
-          };
-        });
-
-        // Mark message as delivered and seen if it's the current user's message
-        if (message.senderId === user?.userId) {
-          socket.emit("messageStatus", {
-            messageId: message.messageId,
-            status: "delivered",
-          });
-
-          // Mark as seen if the chat is open
-          if (isChatOpen) {
-            socket.emit("messageStatus", {
-              messageId: message.messageId,
-              status: "seen",
-            });
-          }
-        }
-      }
-
-      // Update the conversation list with the new message
-      if (conversationsData) {
-        // Update the conversation in the list
-        const updatedConversations = conversationsData.map((conv) => {
-          if (conv.id === message.conversationId) {
-            return {
-              ...conv,
-              lastMessage: {
-                id: message.messageId,
-                content: message.content,
-                createdAt: message.createdAt,
-                senderName: message.sender?.name || "Unknown",
-              },
-              updatedAt: new Date().toISOString(),
-            };
-          }
-          return conv;
-        });
-        // Update the conversations data (you might want to use a proper state update here)
-        // setConversations(updatedConversations);
-      }
-    };
 
     const handleMessageStatus = (data: {
       messageId: string;
@@ -270,6 +237,27 @@ function Messages({
       });
     };
 
+    const handleMessageStatusUpdated = (data: {
+      messageId: string;
+      status: "delivered" | "seen";
+      conversationId: string;
+    }) => {
+      console.log("Message status updated:", data);
+      if (data.conversationId === currentConversation.id) {
+        setCurrentConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg.messageId === data.messageId
+                ? { ...msg, [data.status]: true }
+                : msg
+            ),
+          };
+        });
+      }
+    };
+
     const handleTypingStatus = (data: {
       userId: string;
       isTyping: boolean;
@@ -280,19 +268,73 @@ function Messages({
       }));
     };
 
+    const handleMessageSent = (data: {
+      messageId: string;
+      conversationId: string;
+      success: boolean;
+    }) => {
+      console.log("Message sent confirmation:", data);
+      if (data.conversationId === currentConversation.id && data.success) {
+        // Message was successfully sent to server
+        setCurrentConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg.messageId === data.messageId
+                ? { ...msg, delivered: true }
+                : msg
+            ),
+          };
+        });
+      }
+    };
+
+    const handleConversationRead = (data: {
+      conversationId: string;
+      userId: string;
+      lastReadMessageId: string;
+    }) => {
+      console.log("Conversation read:", data);
+      if (data.conversationId === currentConversation.id) {
+        // Mark all messages as seen up to the last read message
+        setCurrentConversation((prev) => {
+          if (!prev) return null;
+          const messageIndex = prev.messages.findIndex(
+            (msg) => msg.messageId === data.lastReadMessageId
+          );
+          if (messageIndex !== -1) {
+            return {
+              ...prev,
+              messages: prev.messages.map((msg, index) =>
+                index <= messageIndex
+                  ? { ...msg, seen: true, delivered: true }
+                  : msg
+              ),
+            };
+          }
+          return prev;
+        });
+      }
+    };
+
     // Set up all socket listeners
-    socket.on("receiveMessage", handleNewMessage);
     socket.on("messageStatus", handleMessageStatus);
+    socket.on("messageStatusUpdated", handleMessageStatusUpdated);
     socket.on("typingStatus", handleTypingStatus);
+    socket.on("messageSent", handleMessageSent);
+    socket.on("conversationRead", handleConversationRead);
 
     // Join the conversation room
     socket.emit("joinConversation", { conversationId: currentConversation.id });
 
     return () => {
       // Clean up listeners
-      socket.off("receiveMessage", handleNewMessage);
       socket.off("messageStatus", handleMessageStatus);
+      socket.off("messageStatusUpdated", handleMessageStatusUpdated);
       socket.off("typingStatus", handleTypingStatus);
+      socket.off("messageSent", handleMessageSent);
+      socket.off("conversationRead", handleConversationRead);
 
       // Leave the conversation room
       socket.emit("leaveConversation", {
@@ -343,9 +385,10 @@ function Messages({
     [socket, currentConversation, user]
   );
 
-  // Handle sending a new message
+  const [sendMessageToAPI] = useSendMessageMutation();
+
   const handleSendMessage = useCallback(
-    (message: {
+    async (message: {
       senderId: string;
       receiverId: string;
       content: string;
@@ -353,114 +396,159 @@ function Messages({
     }) => {
       if (!socket || !currentConversation || !user) return;
 
-      // Clear any pending typing indicators
       handleTyping(false);
 
-      // Create a temporary message ID for optimistic updates
       const tempMessageId = `temp-${Date.now()}`;
-      const newMessage: ApiMessage = {
-        id: tempMessageId,
+      const tempCreatedAt = new Date().toISOString();
+
+      const tempMessage: ApiMessage = {
         messageId: tempMessageId,
         conversationId: currentConversation.id,
         senderId: message.senderId,
         receiverId: message.receiverId,
         content: message.content,
         messageType: message.messageType,
-        createdAt: new Date().toISOString(),
-        seen: false,
-        delivered: false,
-        sender: {
-          userId: user.userId,
-          name: user.name || "You",
-          profileImage: user.profileImage,
-        },
-      };
-
-      // Update UI optimistically
-      setCurrentConversation((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          messages: [...prev.messages, newMessage],
-          updatedAt: new Date().toISOString(),
-          lastMessage: {
-            id: tempMessageId,
-            content: message.content,
-            createdAt: new Date().toISOString(),
-            senderName: user.name || "You",
-          },
-        };
-      });
-
-      // Emit the message via WebSocket
-      socket.emit("sendMessage", {
-        ...message,
-        conversationId: currentConversation.id,
-        messageId: tempMessageId,
-        createdAt: new Date().toISOString(),
+        createdAt: tempCreatedAt,
         seen: false,
         delivered: false,
         sender: {
           userId: message.senderId,
           name: user?.name || "You",
+          profileImage: user?.profileImage || null,
         },
+      };
+
+      setCurrentConversation((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: [...prev.messages, tempMessage],
+          updatedAt: tempCreatedAt,
+          lastMessage: {
+            id: tempMessageId,
+            content: message.content,
+            createdAt: tempCreatedAt,
+            senderName: user?.name || "You",
+          },
+        };
       });
 
-      // Handle message delivery status
-      const handleMessageDelivered = (data: { messageId: string }) => {
-        if (
-          data.messageId === tempMessageId ||
-          data.messageId.startsWith("temp-")
-        ) {
-          setCurrentConversation((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              messages: prev.messages.map((msg) =>
-                msg.messageId === tempMessageId
-                  ? { ...msg, delivered: true }
-                  : msg
-              ),
-            };
+      try {
+        // Send to database via API first - match backend requirements
+        const apiPayload = {
+          senderId: message.senderId,
+          content: message.content,
+          messageType: message.messageType as "TEXT" | "IMAGE" | "FILE",
+          conversationId: currentConversation.id,
+        };
+
+        const response = await sendMessageToAPI(apiPayload).unwrap();
+
+        // Update the temporary message with real ID
+        setCurrentConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg.messageId === tempMessageId
+                ? {
+                    ...msg,
+                    messageId: response.id,
+                    id: response.id,
+                    createdAt: response.createdAt,
+                  }
+                : msg
+            ),
+            lastMessage: {
+              id: response.id,
+              content: message.content,
+              createdAt: response.createdAt,
+              senderName: user?.name || "You",
+            },
+          };
+        });
+
+        // Send via Socket for real-time communication to other participants
+        if (socket.connected) {
+          console.log("Emitting sendMessage via socket");
+          socket.emit("sendMessage", {
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            content: message.content,
+            messageType: message.messageType,
+            messageId: response.id,
+            conversationId: currentConversation.id,
+            createdAt: response.createdAt,
+            seen: false,
+            delivered: false,
+            sender: {
+              userId: message.senderId,
+              name: user?.name || "You",
+              profileImage: user?.profileImage,
+            },
           });
-          // Unsubscribe from the event
+
+          // Emit messageSent event to confirm message was sent
+          socket.emit("messageSent", {
+            messageId: response.id,
+            conversationId: currentConversation.id,
+            success: true,
+          });
+        }
+
+        // Handle delivery and seen status updates
+        const handleMessageDelivered = (data: { messageId: string }) => {
+          if (data.messageId === response.id) {
+            setCurrentConversation((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.messageId === response.id
+                    ? { ...msg, delivered: true }
+                    : msg
+                ),
+              };
+            });
+            socket.off("messageDelivered", handleMessageDelivered);
+          }
+        };
+
+        const handleMessageSeen = (data: { messageId: string }) => {
+          if (data.messageId === response.id) {
+            setCurrentConversation((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.messageId === response.id
+                    ? { ...msg, seen: true, delivered: true }
+                    : msg
+                ),
+              };
+            });
+            socket.off("messageSeen", handleMessageSeen);
+          }
+        };
+
+        // Listen for delivery and read receipts
+        socket.on("messageDelivered", handleMessageDelivered);
+        socket.on("messageSeen", handleMessageSeen);
+
+        // Clean up event listeners after a timeout
+        setTimeout(() => {
           socket.off("messageDelivered", handleMessageDelivered);
-        }
-      };
-
-      // Handle message seen status
-      const handleMessageSeen = (data: { messageId: string }) => {
-        if (
-          data.messageId === tempMessageId ||
-          data.messageId.startsWith("temp-")
-        ) {
-          setCurrentConversation((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              messages: prev.messages.map((msg) =>
-                msg.messageId === tempMessageId
-                  ? { ...msg, seen: true, delivered: true }
-                  : msg
-              ),
-            };
-          });
-          // Unsubscribe from the event
           socket.off("messageSeen", handleMessageSeen);
-        }
-      };
+        }, 10000); // 10 seconds timeout
 
-      // Listen for delivery and read receipts
-      socket.on("messageDelivered", handleMessageDelivered);
-      socket.on("messageSeen", handleMessageSeen);
-
-      // Clean up event listeners when component unmounts or conversation changes
-      return () => {
-        socket.off("messageDelivered", handleMessageDelivered);
-        socket.off("messageSeen", handleMessageSeen);
-      };
+        // Refetch conversations to update the list with new last message
+        refetch();
+      } catch (error) {
+        console.error("Failed to send message:", error);
+        // You could show a toast error message here
+      }
     },
-    [socket, currentConversation, user, handleTyping]
+    [socket, currentConversation, user, handleTyping, sendMessageToAPI, refetch]
   );
 
   // Close chat dialog
@@ -468,106 +556,38 @@ function Messages({
     setIsChatOpen(false);
   }, []);
 
-  const {
-    data: apiData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetConversationsQuery(user?.userId || "", {
-    skip: !user?.userId,
-    refetchOnMountOrArgChange: true,
-    refetchOnReconnect: true,
-    refetchOnFocus: true,
-  });
-
-  const socketRef = useRef<Socket | null>(null);
-
-  // Initialize socket connection
-  useEffect(() => {
-    if (!user?.userId) return;
-
-    // Create socket connection with query parameters
-    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-      query: { userId: user.userId },
-      transports: ["websocket"],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    // Connection event handlers
-    socket.on("connect", () => {
-      console.log("Connected to WebSocket server");
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("WebSocket connection error:", error);
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.log("Disconnected from WebSocket server:", reason);
-    });
-
-    socketRef.current = socket;
-
-    // Cleanup on unmount
-    return () => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
-    };
-  }, [user?.userId]);
-
-  // Function to manually send a message
-  const sendMessage = useCallback(
-    (message: {
-      senderId: string;
-      receiverId: string;
-      content: string;
-      messageType: string;
-    }) => {
-      if (socketRef.current?.connected) {
-        socketRef.current.emit("sendMessage", message);
-        return true;
-      }
-      console.error("WebSocket is not connected");
-      return false;
-    },
-    []
-  );
-
-  // Function to listen for incoming messages
-  const onMessage = useCallback((callback: (message: any) => void) => {
-    if (!socketRef.current) return () => {};
-
-    socketRef.current.on("receiveMessage", callback);
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off("receiveMessage", callback);
-      }
-    };
-  }, []);
-
-  // Set up message listener
+  // Set up message listener - This is the MAIN message listener
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (message: ApiMessage) => {
-      // Don't show the message if it's from the current user
-      if (message.senderId === user?.userId) return;
+      console.log("Received new message:", message);
 
+      // Always update conversations list first
+      refetch();
+
+      // Update current conversation if it's the same conversation
       setCurrentConversation((prev) => {
-        if (!prev || prev.id !== message.conversationId) return prev;
+        if (!prev || prev.id !== message.conversationId) {
+          console.log(
+            "Message is for different conversation or no conversation open"
+          );
+          return prev;
+        }
 
-        // Check if message already exists
+        // Check if message already exists to prevent duplicates
         const messageExists = prev.messages.some(
           (m) => m.messageId === message.messageId
         );
-        if (messageExists) return prev;
+        if (messageExists) {
+          console.log("Message already exists, skipping:", message.messageId);
+          return prev;
+        }
 
+        console.log(
+          "Adding new message to current conversation:",
+          message.messageId
+        );
         // Add new message to the conversation
         return {
           ...prev,
@@ -582,29 +602,50 @@ function Messages({
         };
       });
 
-      // Mark message as delivered
-      socket.emit("messageStatus", {
-        messageId: message.messageId,
-        status: "delivered",
-      });
-
-      // If chat is open, mark as seen
-      if (isChatOpen) {
+      // Mark message as delivered only if it's not from current user
+      if (message.senderId !== user?.userId && socket) {
+        console.log("Marking message as delivered:", message.messageId);
         socket.emit("messageStatus", {
           messageId: message.messageId,
-          status: "seen",
+          status: "delivered",
         });
+
+        // Emit messageStatusUpdated for real-time status updates
+        socket.emit("messageStatusUpdated", {
+          messageId: message.messageId,
+          status: "delivered",
+          conversationId: message.conversationId,
+        });
+
+        // If chat is open AND it's the same conversation, mark as seen after a short delay
+        if (isChatOpen && currentConversation?.id === message.conversationId) {
+          setTimeout(() => {
+            console.log("Marking message as seen:", message.messageId);
+            socket.emit("messageStatus", {
+              messageId: message.messageId,
+              status: "seen",
+            });
+
+            socket.emit("messageStatusUpdated", {
+              messageId: message.messageId,
+              status: "seen",
+              conversationId: message.conversationId,
+            });
+          }, 1000); // 1 second delay before marking as seen
+        }
       }
     };
 
     // Listen for new messages
+    console.log("Setting up receiveMessage listener");
     socket.on("receiveMessage", handleNewMessage);
 
     // Clean up
     return () => {
+      console.log("Cleaning up receiveMessage listener");
       socket.off("receiveMessage", handleNewMessage);
     };
-  }, [socket, user?.userId, isChatOpen]);
+  }, [socket, user?.userId, isChatOpen, refetch, currentConversation?.id]);
 
   return (
     <div className={cn("main-card flex flex-col gap-4 h-full", className)}>
@@ -685,8 +726,11 @@ function Messages({
                 (p) => p.userId !== user?.userId
               );
 
-              // Get the last message if it exists
-              const lastMessage = conversation.messages?.[0];
+              // Get the last message (most recent) if it exists
+              const lastMessage =
+                conversation.messages?.length > 0
+                  ? conversation.messages[conversation.messages.length - 1]
+                  : conversation.lastMessage;
 
               return (
                 <li key={conversation.id}>
@@ -700,9 +744,11 @@ function Messages({
                     <div className="relative mr-3">
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                         {otherParticipant?.user?.profileImage ? (
-                          <img
+                          <Image
                             src={otherParticipant.user.profileImage}
                             alt={otherParticipant.user.name || "User"}
+                            width={40}
+                            height={40}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -762,8 +808,8 @@ function Messages({
           open={isChatOpen}
           onOpenChange={setIsChatOpen}
           messages={currentConversation.messages.map((msg) => ({
-            id: msg.messageId,  // Use messageId as id
-            senderId: msg.sender?.userId,  // Add required senderId
+            id: msg.messageId, // Use messageId as id
+            senderId: msg.sender?.userId, // Add required senderId
             receiverId: msg.receiverId,
             content: msg.content,
             messageType: msg.messageType,
@@ -773,8 +819,8 @@ function Messages({
             sender: {
               userId: msg.sender?.userId,
               name: msg.sender?.name,
-              profileImage: msg.sender?.profileImage
-            }
+              profileImage: msg.sender?.profileImage,
+            },
           }))}
           currentUserId={user?.userId}
           otherParticipant={{
@@ -794,6 +840,7 @@ function Messages({
             )?.user?.isOnline,
           }}
           onSendMessage={handleSendMessage}
+          conversationId={currentConversation.id}
         />
       )}
     </div>

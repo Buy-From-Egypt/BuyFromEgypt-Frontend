@@ -39,8 +39,8 @@ export default function SignInForm() {
     mode: "onSubmit",
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "raza4omeh5@maildax.me",
-      password: "Pa$$w00rd@me1",
+      email: "",
+      password: "",
     },
   });
 
