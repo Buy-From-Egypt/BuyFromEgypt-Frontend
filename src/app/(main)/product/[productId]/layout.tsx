@@ -27,7 +27,7 @@ export default async function Layout({
             <VerticalNav />
           </aside>
           <section className="w-full flex-1 ">
-            <ProductPage params={{ productId }} />
+            <ProductPage params={Promise.resolve({ productId })} />
           </section>
         </div>
       </main>

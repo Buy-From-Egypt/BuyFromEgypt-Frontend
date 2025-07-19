@@ -786,7 +786,8 @@ function Messages({
                       {lastMessage && (
                         <p className="text-sm text-muted-foreground truncate">
                           <span className="font-medium">
-                            {lastMessage.senderId === user?.userId
+                            {"senderId" in lastMessage &&
+                            lastMessage.senderId === user?.userId
                               ? "You: "
                               : ""}
                           </span>

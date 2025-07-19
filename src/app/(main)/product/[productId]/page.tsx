@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import {
   useGetProductByIdQuery,
   useGetProductsQuery,
@@ -10,17 +11,18 @@ import { formatCurrency } from "@/lib/utils";
 import { Star } from "lucide-react";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     productId: string;
-  };
+  }>;
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
+  const { productId } = use(params);
   const {
     data: product,
     isLoading,
     error,
-  } = useGetProductByIdQuery(params.productId, {
+  } = useGetProductByIdQuery(productId, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: false,
     refetchOnReconnect: false,

@@ -71,7 +71,7 @@ export default function SignUpForm() {
     defaultValues: {
       name: "",
       email: "",
-      password: "Pa$$w00rd@me",
+      password: "",
       type: "EXPORTER",
       phoneNumber: "",
       taxId: "",

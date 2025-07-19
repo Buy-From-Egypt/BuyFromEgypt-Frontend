@@ -357,7 +357,8 @@ function MarketplaceContent() {
                 Please make sure you have set your preferences in your profile.
               </p>
             </div>
-          ) : recommendationsData?.data?.recommendations?.length > 0 ? (
+          ) : recommendationsData?.data?.recommendations &&
+            recommendationsData.data.recommendations.length > 0 ? (
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
