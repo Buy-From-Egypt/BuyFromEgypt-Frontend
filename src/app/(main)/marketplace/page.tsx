@@ -13,17 +13,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Search, Loader2, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { toast } from "sonner";
 import { debounce } from "lodash";
 
 // Components
 import ProductCard, { ProductCardSkeleton } from "@/components/product-card";
-import { Form, FormField } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Types and API
 import { Product, useGetProductsQuery } from "@/store/apis/products";
+import { useGetProductRecommendationsByUserIdQuery } from "@/store/apis/recommendations";
+import { useAuth } from "@/context/AuthContext";
 import AddProduct from "./add-product";
 
 // Schema for form validation
@@ -34,6 +36,7 @@ type SearchForm = z.infer<typeof SearchFormSchema>;
 const PRODUCTS_PER_PAGE = 12;
 
 function MarketplaceContent() {
+  const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -43,6 +46,7 @@ function MarketplaceContent() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [clientSideSearch, setClientSideSearch] = useState("");
   const [addProductOpen, setAddProductOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all-products");
   // Filter products based on client-side search
   const filteredProducts = useMemo(() => {
     if (!clientSideSearch) return allProducts;
@@ -82,17 +86,29 @@ function MarketplaceContent() {
       refetchOnMountOrArgChange: true,
       refetchOnFocus: false,
       refetchOnReconnect: false,
+      skip: activeTab !== "all-products",
     }
   );
 
+  // Recommendations API Query
+  const {
+    data: recommendationsData,
+    isLoading: isLoadingRecommendations,
+    error: recommendationsError,
+  } = useGetProductRecommendationsByUserIdQuery(
+    { userId: user?.userId || "", num_recommendations: 20 },
+    { skip: !user?.userId || activeTab !== "ai-suggestions" }
+  );
+
   // Handle search params changes
+  const searchParamsString = searchParams.toString();
   useEffect(() => {
     // Reset to first page when any search parameter changes
     setPage(1);
     setAllProducts([]);
     // Clear client-side search when server-side search changes
     setClientSideSearch("");
-  }, [searchParams.toString()]);
+  }, [searchParamsString]);
 
   // Update products when data changes
   useEffect(() => {
@@ -180,14 +196,6 @@ function MarketplaceContent() {
     },
   });
 
-  // Handle search input change
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    form.setValue("search", value);
-    setClientSideSearch(value.toLowerCase());
-    debouncedSearch(value);
-  };
-
   // Show error state
   if (error) {
     return (
@@ -220,101 +228,362 @@ function MarketplaceContent() {
         </p>
       </div>
 
-      {/* Search Bar */}
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col sm:flex-row gap-4 w-full"
-        >
-          <div className="flex-1 relative">
-            <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search products..."
-              className="border-secondary rounded-full placeholder:text-secondary"
-              {...form.register("search", {
-                onChange: (e) => {
-                  setClientSideSearch(e.target.value);
-                },
-              })}
-            />
-            {(form.watch("search") || clientSideSearch) && (
-              <X
-                className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
-                onClick={() => {
-                  form.setValue("search", "");
-                  handleClearSearch();
-                }}
-              />
-            )}
-          </div>
-        </form>
-      </Form>
-
-      {/* Products Grid */}
-      {allProducts.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-            {(clientSideSearch ? filteredProducts : allProducts).map(
-              (product, index) => {
-                // Create a more unique key using multiple product properties and array index
-                const uniqueKey = `${product.productId}-${product.name}-${
-                  product.updatedAt
-                }-${product.createdAt || ""}-${index}`
-                  .toLowerCase()
-                  .replace(/\s+/g, "-") // Replace spaces with hyphens
-                  .replace(/[^\w-]/g, ""); // Remove special characters
-
-                return <ProductCard key={uniqueKey} product={product} />;
-              }
-            )}
-          </div>
-          {clientSideSearch && filteredProducts.length === 0 && (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">
-                No products match your search.
-              </p>
-            </div>
-          )}
-
-          {/* Loading indicator for infinite scroll */}
-          <div
-            ref={loaderRef}
-            className="h-20 w-full flex items-center justify-center"
-            style={{ minHeight: "100px" }}
+      {/* Tabs for All Products vs AI Suggestions */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full p-0 h-auto bg-transparent rounded-full border-0 flex gap-2">
+          <TabsTrigger
+            value="all-products"
+            className="flex-1 px-8 py-3 rounded-full text-gray-600 font-medium text-sm bg-transparent border-0 data-[state=active]:text-white data-[state=active]:bg-gray-800 transition-all duration-200 hover:bg-gray-100 data-[state=active]:hover:bg-gray-800"
           >
-            {isFetching && data?.meta?.NextPage && (
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Loading more products...
+            All Products
+          </TabsTrigger>
+          {user && (
+            <TabsTrigger
+              value="ai-suggestions"
+              className="flex-1 px-8 py-3 rounded-full text-gray-600 font-medium text-sm bg-transparent border-0 data-[state=active]:text-white data-[state=active]:bg-gray-800 transition-all duration-200 hover:bg-gray-100 data-[state=active]:hover:bg-gray-800"
+            >
+              AI Suggestions
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="all-products" className="space-y-6">
+          {renderAllProductsContent()}
+        </TabsContent>
+        <TabsContent value="ai-suggestions" className="space-y-6">
+          {renderAISuggestionsContent()}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
+  function renderAllProductsContent() {
+    return (
+      <>
+        {/* Search Bar */}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col sm:flex-row gap-4 w-full"
+          >
+            <div className="flex-1 relative">
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="border-secondary rounded-full placeholder:text-secondary"
+                {...form.register("search", {
+                  onChange: (e) => {
+                    setClientSideSearch(e.target.value);
+                  },
+                })}
+              />
+              {(form.watch("search") || clientSideSearch) && (
+                <X
+                  className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
+                  onClick={() => {
+                    form.setValue("search", "");
+                    handleClearSearch();
+                  }}
+                />
+              )}
+            </div>
+          </form>
+        </Form>
+
+        {/* Products Grid */}
+        {allProducts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              {(clientSideSearch ? filteredProducts : allProducts).map(
+                (product, index) => {
+                  // Create a more unique key using multiple product properties and array index
+                  const uniqueKey = `${product.productId}-${product.name}-${
+                    product.updatedAt
+                  }-${product.createdAt || ""}-${index}`
+                    .toLowerCase()
+                    .replace(/\s+/g, "-") // Replace spaces with hyphens
+                    .replace(/[^\w-]/g, ""); // Remove special characters
+
+                  return <ProductCard key={uniqueKey} product={product} />;
+                }
+              )}
+            </div>
+            {clientSideSearch && filteredProducts.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">
+                  No products match your search.
                 </p>
               </div>
             )}
+
+            {/* Loading indicator for infinite scroll */}
+            <div
+              ref={loaderRef}
+              className="h-20 w-full flex items-center justify-center"
+              style={{ minHeight: "100px" }}
+            >
+              {isFetching && data?.meta?.NextPage && (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Loading more products...
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        ) : !isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg">
+            <Search className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium text-muted-foreground mb-2">
+              No products found
+            </p>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              Try adjusting your search criteria or browse all products to
+              discover what&apos;s available.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ProductCardSkeleton key={`skeleton-${i}`} />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  function renderAISuggestionsContent() {
+    if (!user) {
+      return (
+        <>
+          {/* Search Bar */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col sm:flex-row gap-4 w-full"
+            >
+              <div className="flex-1 relative">
+                <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  className="border-secondary rounded-full placeholder:text-secondary"
+                  {...form.register("search", {
+                    onChange: (e) => {
+                      setClientSideSearch(e.target.value);
+                    },
+                  })}
+                />
+                {(form.watch("search") || clientSideSearch) && (
+                  <X
+                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
+                    onClick={() => {
+                      form.setValue("search", "");
+                      handleClearSearch();
+                    }}
+                  />
+                )}
+              </div>
+            </form>
+          </Form>
+
+          <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg">
+            <p className="text-lg font-medium text-muted-foreground mb-2">
+              Sign in required
+            </p>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              Please sign in to see personalized AI suggestions.
+            </p>
           </div>
         </>
-      ) : !isLoading ? (
-        // Empty state
-        <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg">
-          <Search className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-1">No products found</h3>
-          <p className="text-sm text-muted-foreground text-center max-w-md px-4">
-            {searchTerm
-              ? `No products match your search for "${searchTerm}"`
-              : "No products available at the moment. Please check back later."}
-          </p>
-        </div>
-      ) : (
-        // Initial loading state
+      );
+    }
+
+    if (isLoadingRecommendations) {
+      return (
+        <>
+          {/* Search Bar */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col sm:flex-row gap-4 w-full"
+            >
+              <div className="flex-1 relative">
+                <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  className="border-secondary rounded-full placeholder:text-secondary"
+                  {...form.register("search", {
+                    onChange: (e) => {
+                      setClientSideSearch(e.target.value);
+                    },
+                  })}
+                />
+                {(form.watch("search") || clientSideSearch) && (
+                  <X
+                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
+                    onClick={() => {
+                      form.setValue("search", "");
+                      handleClearSearch();
+                    }}
+                  />
+                )}
+              </div>
+            </form>
+          </Form>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ProductCardSkeleton key={`ai-skeleton-${i}`} />
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    if (recommendationsError) {
+      return (
+        <>
+          {/* Search Bar */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col sm:flex-row gap-4 w-full"
+            >
+              <div className="flex-1 relative">
+                <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  className="border-secondary rounded-full placeholder:text-secondary"
+                  {...form.register("search", {
+                    onChange: (e) => {
+                      setClientSideSearch(e.target.value);
+                    },
+                  })}
+                />
+                {(form.watch("search") || clientSideSearch) && (
+                  <X
+                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
+                    onClick={() => {
+                      form.setValue("search", "");
+                      handleClearSearch();
+                    }}
+                  />
+                )}
+              </div>
+            </form>
+          </Form>
+
+          <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg">
+            <p className="text-lg font-medium text-red-500 mb-2">
+              Failed to load AI suggestions
+            </p>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              Please try again later.
+            </p>
+          </div>
+        </>
+      );
+    }
+
+    const aiProducts = Array.isArray(recommendationsData?.data)
+      ? recommendationsData.data
+      : recommendationsData?.data?.recommendations || [];
+
+    if (aiProducts.length === 0) {
+      return (
+        <>
+          {/* Search Bar */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col sm:flex-row gap-4 w-full"
+            >
+              <div className="flex-1 relative">
+                <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  className="border-secondary rounded-full placeholder:text-secondary"
+                  {...form.register("search", {
+                    onChange: (e) => {
+                      setClientSideSearch(e.target.value);
+                    },
+                  })}
+                />
+                {(form.watch("search") || clientSideSearch) && (
+                  <X
+                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
+                    onClick={() => {
+                      form.setValue("search", "");
+                      handleClearSearch();
+                    }}
+                  />
+                )}
+              </div>
+            </form>
+          </Form>
+
+          <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg">
+            <p className="text-lg font-medium text-muted-foreground mb-2">
+              No AI suggestions available
+            </p>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              Continue browsing and interacting with products to get
+              personalized recommendations.
+            </p>
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <>
+        {/* Search Bar */}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col sm:flex-row gap-4 w-full"
+          >
+            <div className="flex-1 relative">
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 size-6 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="border-secondary rounded-full placeholder:text-secondary"
+                {...form.register("search", {
+                  onChange: (e) => {
+                    setClientSideSearch(e.target.value);
+                  },
+                })}
+              />
+              {(form.watch("search") || clientSideSearch) && (
+                <X
+                  className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
+                  onClick={() => {
+                    form.setValue("search", "");
+                    handleClearSearch();
+                  }}
+                />
+              )}
+            </div>
+          </form>
+        </Form>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
+          {aiProducts.map((product: Product, index: number) => {
+            const uniqueKey = `ai-${product.productId}-${index}`;
+            return <ProductCard key={uniqueKey} product={product} />;
+          })}
         </div>
-      )}
-      <div ref={loaderRef} className="h-1" />
-    </div>
-  );
+      </>
+    );
+  }
 }
 
 export default function Page() {

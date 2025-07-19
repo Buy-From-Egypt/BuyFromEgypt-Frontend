@@ -6,6 +6,7 @@ import { productsApi } from "./apis/products";
 import { userApi } from "./apis/user.api";
 import { profileApi, socialMediaApi } from "./apis/profile";
 import { chatApi } from "./apis/chat.api";
+import { recommendationApi } from "./apis/recommendations";
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
     [profileApi.reducerPath]: profileApi.reducer,
     [socialMediaApi.reducerPath]: socialMediaApi.reducer,
     [chatApi.reducerPath]: chatApi.reducer,
+    [recommendationApi.reducerPath]: recommendationApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -27,7 +29,8 @@ export const store = configureStore({
       userApi.middleware,
       profileApi.middleware,
       socialMediaApi.middleware,
-      chatApi.middleware
+      chatApi.middleware,
+      recommendationApi.middleware
     ),
 });
 
